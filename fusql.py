@@ -32,9 +32,11 @@ class Inode:
 class FuSQL(fuse.Fuse):
     def __init__(self, *args, **kw):
         fuse.Fuse.__init__(self, *args, **kw)
+
+        self.connection = sqlite3.connect("database.sqlite3")
        
-        root_mode = S_IRUSR|S_IXUSR|S_IWUSR|S_IRGRP|S_IXGRP|S_IXOTH|S_IROTH
- 
+        # Add root directory
+        root_mode = S_IRUSR|S_IXUSR|S_IWUSR|S_IRGRP|S_IXGRP|S_IXOTH|S_IROTH 
         self.inodes = {'/': Inode("/", root_mode, True)}
 
     def getattr(self, path):
