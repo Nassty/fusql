@@ -12,8 +12,15 @@ class FusqlDb(object):
            row with a certain id'''
 
         sql = "SELECT * FROM %s WHERE id = %d" % (table, id)
-        self.cursor.execute(sql)
-        return self.cursor[0]
+        response = self.cursor.execute(sql)
+        return response.fetchone() 
+
+
+    def get_elements(self, table):
+
+        sql = "SELECT id from %s" %(table)
+        response = self.cursor.execute(sql)
+        return [x[0] for x in response]
 
     def get_tables(self):
         '''Returns a list with the names of 
