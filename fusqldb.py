@@ -32,7 +32,7 @@ class FusqlDb(object):
 
         result = []
         for element in self.cursor:
-            result.append(element[0])
+            result.append(element[0].encode("ascii"))
         return result
 
     def get_table_structure(self, table):
