@@ -2,12 +2,18 @@
 FUSQL Linux Version
 ===================
 
-Main version of the project, done to use it on a linux
-machine.
+Main version. Developed under linux. 
 
-Fusql it's a interface of a SQL database (sqlite for now) as a file system,
-where you have tables as folders and ini formated files as rows.
-Inside a file you will find the column names and it's value.
+Fusql works as a interface between a relational database (sqlite for
+now) and a filesystem. Each table is represented as a directory and each
+row is represented as a .ini file.
+
+We're supporting creating / deleting and modifying tables and table
+structures as a experimental features. This took about 6 hours in a
+sunday.
+
+We plan support OS X when we get the python-fuse bindings working. 
+
 
 Example:
 ========
@@ -24,18 +30,12 @@ A database like:
 
 will be visualized as the following directory tree:
 
-::
-    /
+    $ ls
+    users
+    $ ls users
+    1.ini 2.ini
+    $ cat 1.ini
 
-    |--- users
-      |--- 1.ini
-
-      |--- 2.ini
-
-
-and 1.ini will be like:
-
-::
     id = 1
     username = j0hn
     password = secret
