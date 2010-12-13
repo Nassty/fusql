@@ -27,15 +27,17 @@ will be visualized as the following directory tree:
 .. code-block:: text
 ::
     /
+
     |--- users
       |--- 1.ini
+
       |--- 2.ini
 
 
 and 1.ini will be like:
 
 .. code-block:: ini
-
+::
     id = 1
     username = j0hn
     password = secret
