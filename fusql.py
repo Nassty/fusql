@@ -42,7 +42,7 @@ class FuSQL(fuse.Fuse):
             table_path = "/" + table_name
             self.inodes[table_path] = Inode(table_path, mode, True)
 
-            for element_id in self.db.get_element(table_name):
+            for element_id in self.db.get_elements_by_field("id", table_name):
                 element_path = table_path + "/" + str(element_id) + ".ini"
 
                 self.inodes[element_path] = Inode(element_path, mode, False)
@@ -120,7 +120,6 @@ class FuSQL(fuse.Fuse):
         else:
             result = -ENOTEMPTY
     
-
         return result
 
     def readdir(self, path, offset):

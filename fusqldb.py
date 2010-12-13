@@ -7,7 +7,7 @@ class FusqlDb(object):
         self.conn = sqlite3.connect(database, check_same_thread=False)
         self.cursor = self.conn.cursor()
         
-    def get_elements(self, table_name, element_id):
+    def get_element_by_id(self, table_name, element_id):
         '''Returns all elements of table's
            row with a certain id'''
 
@@ -22,9 +22,10 @@ class FusqlDb(object):
         response = self.cursor.execute(sql)
         return response.fetchall()
 
-    def get_element(self, table):
+    def get_elements_by_field(self, field, table):
+        '''Returns an specific field of a table'''
 
-        sql = "SELECT id from %s" %(table)
+        sql = "SELECT %s from %s" %(field, table)
         response = self.cursor.execute(sql)
         return [x[0] for x in response]
 
@@ -58,9 +59,10 @@ class FusqlDb(object):
     def get_element_data(self, table_name, element_id):
         '''Returns ini formated string with all the
            table fields and data'''
+
         result = ""
 
-        data = self.get_elements(table_name, element_id)
+        data = self.get_element_by_id(table_name, element_id)
         structure = self.get_table_structure(table_name)
 
         index = 0
@@ -87,3 +89,5 @@ class FusqlDb(object):
         sql = "DROP TABLE '%s'" % table_name
 
         self.cursor.execute(sql)
+
+
