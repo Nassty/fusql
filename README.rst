@@ -29,19 +29,18 @@ A database like:
     +------+----------+----------+---------+----------+---------+-------+---------+
 
 will be visualized as the following directory tree:
-
-$ ls
-users
-$ ls users
-1.ini 2.ini
-$ cat 1.ini
-
-id = 1
-username = j0hn
-password = secret
-name = Gonzalo
-lastname = Garcia
-address = example
-phone = 1234
-city = Cordoba
+::
+    $ ls
+    users
+    $ ls users
+    1.ini 2.ini
+    $ cat 1.ini
+    id = 1
+    username = j0hn
+    password = secret
+    name = Gonzalo
+    lastname = Garcia
+    address = example
+    phone = 1234
+    city = Cordoba
 
