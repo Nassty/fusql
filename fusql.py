@@ -5,7 +5,7 @@ from stat import *
 import fuse
 import os
 import time
-import sqlite3
+import fusqldb
 
 fuse.fuse_python_api = (0, 2)
 
@@ -32,16 +32,27 @@ class Inode:
 class FuSQL(fuse.Fuse):
     def __init__(self, *args, **kw):
         fuse.Fuse.__init__(self, *args, **kw)
-
-        self.connection = sqlite3.connect("database.sqlite3")
+        self.db = fusqldb.FusqlDb("test.db")
        
         # Add root directory
-        root_mode = S_IRUSR|S_IXUSR|S_IWUSR|S_IRGRP|S_IXGRP|S_IXOTH|S_IROTH 
-        self.inodes = {'/': Inode("/", root_mode, True)}
+        mode = S_IRUSR|S_IXUSR|S_IWUSR|S_IRGRP|S_IXGRP|S_IXOTH|S_IROTH 
+        self.inodes = {'/': Inode("/", mode, True)}
+
+        for table_name in self.db.get_tables():
+            table_path = "/" + table_name
+            self.inodes[table_path] = Inode(table_path, mode, True)
+
+            for element_id in self.db.get_elements(table_name):
+                element_path = table_path + "/" + str(element_id) + ".ini"
+
+                self.inodes[element_path] = Inode(element_path, mode, False)
+                
+                element_data = self.db.get_element_data(table_name, element_id)
+                self.inodes[element_path].metadata.st_size = len(element_data)
 
     def getattr(self, path):
-        if path in self.hashtable:
-            return self.hashtable[path].metadata
+        if path in self.inodes:
+            return self.inodes[path].metadata
         else:
             return -ENOENT
 
@@ -50,10 +61,13 @@ class FuSQL(fuse.Fuse):
         return 0
 
     def read(self, path, size, offset):
-        result = ''
-        
-        return result
+        element_id = int(path.split("/")[-1].split(".ini")[0])
+        table_name = path.split("/")[-2]
 
+        result = self.db.get_element_data(table_name, element_id)
+        result = result[offset:offset+size]
+
+        return result
 
     def mknod(self, path, mode, rdev):
         return 0
@@ -89,6 +103,18 @@ class FuSQL(fuse.Fuse):
     def readdir(self, path, offset):
         result = ['.', '..']
 
+        if path != "/":
+            path = path + "/"
+        
+        for i in self.inodes.keys():
+            if i.startswith(path):
+
+                name = i.split(path)[1]
+                name = name.split("/")[0]
+
+                if name not in result:
+                    result.append(name)
+        
         for i in result:
             if i:
                 yield fuse.Direntry(i)
@@ -98,7 +124,7 @@ class FuSQL(fuse.Fuse):
 
 if __name__ == '__main__':
 
-    fs = SimpleFS()
+    fs = FuSQL()
     fs.parse(errex=1)
     fs.main()
     
