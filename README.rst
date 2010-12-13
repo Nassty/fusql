@@ -28,7 +28,7 @@ A database like:
     | 2    | nassty   | secret2  | Mariano | Garcia   | example | 4321  | Cordoba |
     +------+----------+----------+---------+----------+---------+-------+---------+
 
-will be visualized as the following directory tree:
+will be visualized as the following :
 ::
     $ ls
     users
