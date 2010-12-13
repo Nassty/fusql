@@ -34,18 +34,20 @@ class FuSQL(fuse.Fuse):
         fuse.Fuse.__init__(self, *args, **kw)
         self.db = fusqldb.FusqlDb("test.db")
        
+        root_mode = S_IRUSR|S_IXUSR|S_IWUSR|S_IRGRP|S_IXGRP|S_IXOTH|S_IROTH 
+        file_mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH 
+
         # Add root directory
-        mode = S_IRUSR|S_IXUSR|S_IWUSR|S_IRGRP|S_IXGRP|S_IXOTH|S_IROTH 
-        self.inodes = {'/': Inode("/", mode, True)}
+        self.inodes = {'/': Inode("/", root_mode, True)}
 
         for table_name in self.db.get_tables():
             table_path = "/" + table_name
-            self.inodes[table_path] = Inode(table_path, mode, True)
+            self.inodes[table_path] = Inode(table_path, root_mode, True)
 
-            for element_id in self.db.get_element(table_name):
+            for element_id in self.db.get_elements_by_field("id", table_name):
                 element_path = table_path + "/" + str(element_id) + ".ini"
 
-                self.inodes[element_path] = Inode(element_path, mode, False)
+                self.inodes[element_path] = Inode(element_path, file_mode, False)
                 
                 element_data = self.db.get_element_data(table_name, element_id)
                 self.inodes[element_path].metadata.st_size = len(element_data)
@@ -61,8 +63,9 @@ class FuSQL(fuse.Fuse):
         return 0
 
     def read(self, path, size, offset):
-        element_id = int(path.split("/")[-1].split(".ini")[0])
-        table_name = path.split("/")[-2]
+        spath = path.split("/")
+        table_name = spath[1]
+        element_id = int(spath[2].replace(".ini", ""))
 
         result = self.db.get_element_data(table_name, element_id)
         result = result[offset:offset+size]
@@ -70,6 +73,17 @@ class FuSQL(fuse.Fuse):
         return result
 
     def mknod(self, path, mode, rdev):
+        spath = path.split("/")
+
+        table_name = spath[1]
+        element_id = int(spath[2].replace(".ini", ""))
+
+        self.db.create_table_element(table_name, element_id)
+        self.inodes[path] = Inode(path, mode)
+        
+        element_data = self.db.get_element_data(table_name, element_id)
+        self.inodes[path].metadata.st_size = len(element_data)
+
         return 0
 
     def write(self, path, buf, offset, fh=None):
@@ -80,18 +94,38 @@ class FuSQL(fuse.Fuse):
         return 0
 
     def unlink(self, path):
+        spath = path.split("/")
+        table_name = spath[1]
+        element_id = int(spath[2].replace(".ini", ""))
+
+        self.db.delete_table_element(table_name, element_id)
+        self.inodes.pop(path)
+
         return 0
 
     def rename(self, path_from, path_to):
         return 0
     
     def chmod(self, path, mode):
+        metadata = self.inodes[path].metadata
+        metadata.st_mode = mode
+        metadata.st_ctime = time.time()
         return 0
     
     def chown(self, path, uid, gid):
+        metadata = self.inodes[path].metadata
+        metadata.st_gid = uid
+        metadata.st_gid = gid
+        metadata.st_ctime = time.time()
         return 0
 
     def utime(self, path, times):
+        metadata = self.inodes[path].metadata
+
+        now = time.time()
+        metadata.st_atime = now
+        metadata.st_mtime = now
+        metadata.st_ctime = now
         return 0
 
     def mkdir(self, path, mode):
@@ -120,7 +154,6 @@ class FuSQL(fuse.Fuse):
         else:
             result = -ENOTEMPTY
     
-
         return result
 
     def readdir(self, path, offset):
@@ -130,8 +163,7 @@ class FuSQL(fuse.Fuse):
             path = path + "/"
         
         for i in self.inodes.keys():
-            if i.startswith(path):
-
+            if i.startswith(path) and i != "/":
                 name = i.split(path)[1]
                 name = name.split("/")[0]
 
@@ -139,7 +171,6 @@ class FuSQL(fuse.Fuse):
                     result.append(name)
         
         for i in result:
-            if i:
                 yield fuse.Direntry(i)
 
     def release(self, path, fh=None):
