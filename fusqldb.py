@@ -80,21 +80,27 @@ class FusqlDb(object):
 
         sql = "CREATE TABLE '%s' " % table_name
         sql += "('id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)"
-
         self.cursor.execute(sql)
+        self.connection.commit()
 
     def delete_table(self, table_name):
         '''Removes a table from the database'''
 
         sql = "DROP TABLE '%s'" % table_name
-
         self.cursor.execute(sql)
+        self.connection.commit()
+
+    def create_table_element(self, table_name, element_id):
+        '''Creates a table element'''
+
+        sql = "INSERT INTO '%s' (id) VALUES (%d)" % (table_name, element_id)
+        self.cursor.execute(sql)
+        self.connection.commit()
 
     def delete_table_element(self, table_name, element_id):
         '''Removes an element of a table'''
 
         sql = "DELETE FROM '%s' WHERE id = %d" % (table_name, element_id)
-
         self.cursor.execute(sql)
         self.connection.commit()
 
