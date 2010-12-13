@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 ===================
 FUSQL Linux Version
 ===================
@@ -47,8 +45,3 @@ and 1.ini will be like:
     phone = 1234
     city = Cordoba
 
-
-
-
-
->>>>>>> a16e63f0b71cfb368e79a7de5b76323e6428398e
