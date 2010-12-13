@@ -42,7 +42,7 @@ class FuSQL(fuse.Fuse):
             table_path = "/" + table_name
             self.inodes[table_path] = Inode(table_path, mode, True)
 
-            for element_id in self.db.get_elements(table_name):
+            for element_id in self.db.get_element(table_name):
                 element_path = table_path + "/" + str(element_id) + ".ini"
 
                 self.inodes[element_path] = Inode(element_path, mode, False)
@@ -95,10 +95,33 @@ class FuSQL(fuse.Fuse):
         return 0
 
     def mkdir(self, path, mode):
+        path = path.split("/")
+
+        # Get the table name
+        # It will never be more deep than root
+        table_name = path[1]
+
+        self.db.create_table(table_name)
+
+        table_path = "/" + table_name
+        self.inodes[table_path] = Inode(table_path, mode, True)
+
         return 0
 
     def rmdir(self, path):
-        return 0
+        result = 0
+        table_name = path.split("/")[1]
+
+        table_elements = self.db.get_all_elements(table_name)
+
+        if len(table_elements) == 0:
+            self.db.delete_table(table_name)
+            self.inodes.pop(path)
+        else:
+            result = -ENOTEMPTY
+    
+
+        return result
 
     def readdir(self, path, offset):
         result = ['.', '..']
