@@ -24,7 +24,6 @@ A database like:
 
 will be visualized as the following directory tree:
 
-.. code-block:: text
 ::
     /
 
@@ -36,7 +35,6 @@ will be visualized as the following directory tree:
 
 and 1.ini will be like:
 
-.. code-block:: ini
 ::
     id = 1
     username = j0hn
