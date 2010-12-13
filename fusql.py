@@ -75,8 +75,22 @@ class FuSQL(fuse.Fuse):
     def mknod(self, path, mode, rdev):
         spath = path.split("/")
 
+        # Not allowed more deep than 1 folder
+        # Or files on root
+        if len(spath) != 3:
+            return -EPERM
+        
+        # Files must end in .ini
+        if not spath[2].endswith(".ini"):
+            return -EPERM
+
         table_name = spath[1]
-        element_id = int(spath[2].replace(".ini", ""))
+
+        try:
+            element_id = int(spath[2].replace(".ini", ""))
+        except ValueError:
+            # Invalid file name, must be a number
+            return -EPERM
 
         self.db.create_table_element(table_name, element_id)
         self.inodes[path] = Inode(path, mode)
@@ -104,6 +118,30 @@ class FuSQL(fuse.Fuse):
         return 0
 
     def rename(self, path_from, path_to):
+        spath_from = path_from.split("/")
+        spath_to = path_to.split("/")
+
+        table_from = spath_from[1]
+        table_to = spath_to[1]
+        
+        id_from = int(spath_from[2].replace(".ini", ""))
+        id_to = int(spath_to[2].replace(".ini", ""))
+
+        if table_from != table_to:
+            return -1
+
+        
+        self.db.update_table_field_by_id(table_to, id_from, "id", id_to)
+        
+        self.inodes[path_to] = self.inodes[path_from]
+
+        # Update node data
+        element_data = self.db.get_element_data(table_to, id_to)
+        self.inodes[path_to].path = path_to
+        self.inodes[path_to].metadata.st_size = len(element_data)
+
+        self.inodes.pop(path_from)
+
         return 0
     
     def chmod(self, path, mode):
@@ -129,11 +167,13 @@ class FuSQL(fuse.Fuse):
         return 0
 
     def mkdir(self, path, mode):
-        path = path.split("/")
+        spath = path.split("/")
 
-        # Get the table name
-        # It will never be more deep than root
-        table_name = path[1]
+        # Folders can be only created at the root
+        if len(spath) != 2:
+            return -EFAULT
+
+        table_name = spath[1]
 
         self.db.create_table(table_name)
 

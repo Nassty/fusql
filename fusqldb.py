@@ -1,8 +1,9 @@
 import sqlite3
 
 class FusqlDb(object):
-
     def __init__(self, database):
+        '''Main api to control the database management'''
+
         self.database = database
         self.connection = sqlite3.connect(database, check_same_thread=False)
         self.cursor = self.connection.cursor()
@@ -101,6 +102,15 @@ class FusqlDb(object):
         '''Removes an element of a table'''
 
         sql = "DELETE FROM '%s' WHERE id = %d" % (table_name, element_id)
+        self.cursor.execute(sql)
+        self.connection.commit()
+
+    def update_table_field_by_id(self, table_name, element_id, field, value):
+        '''Modifies a table field'''
+
+        sql = "UPDATE '%s' SET '%s' = '%s' WHERE id = %d" \
+              % (table_name, field, value, element_id)
+
         self.cursor.execute(sql)
         self.connection.commit()
 
