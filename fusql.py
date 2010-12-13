@@ -80,18 +80,38 @@ class FuSQL(fuse.Fuse):
         return 0
 
     def unlink(self, path):
+        spath = path.split("/")
+        table_name = spath[1]
+        element_id = int(spath[2].replace(".ini", ""))
+
+        self.db.delete_table_element(table_name, element_id)
+        self.inodes.pop(path)
+
         return 0
 
     def rename(self, path_from, path_to):
         return 0
     
     def chmod(self, path, mode):
+        metadata = self.inodes[path].metadata
+        metadata.st_mode = mode
+        metadata.st_ctime = time.time()
         return 0
     
     def chown(self, path, uid, gid):
+        metadata = self.inodes[path].metadata
+        metadata.st_gid = uid
+        metadata.st_gid = gid
+        metadata.st_ctime = time.time()
         return 0
 
     def utime(self, path, times):
+        metadata = self.inodes[path].metadata
+
+        now = time.time()
+        metadata.st_atime = now
+        metadata.st_mtime = now
+        metadata.st_ctime = now
         return 0
 
     def mkdir(self, path, mode):
@@ -129,8 +149,7 @@ class FuSQL(fuse.Fuse):
             path = path + "/"
         
         for i in self.inodes.keys():
-            if i.startswith(path):
-
+            if i.startswith(path) and i != "/":
                 name = i.split(path)[1]
                 name = name.split("/")[0]
 
@@ -138,7 +157,6 @@ class FuSQL(fuse.Fuse):
                     result.append(name)
         
         for i in result:
-            if i:
                 yield fuse.Direntry(i)
 
     def release(self, path, fh=None):

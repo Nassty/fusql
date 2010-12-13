@@ -4,8 +4,8 @@ class FusqlDb(object):
 
     def __init__(self, database):
         self.database = database
-        self.conn = sqlite3.connect(database, check_same_thread=False)
-        self.cursor = self.conn.cursor()
+        self.connection = sqlite3.connect(database, check_same_thread=False)
+        self.cursor = self.connection.cursor()
         
     def get_element_by_id(self, table_name, element_id):
         '''Returns all elements of table's
@@ -90,4 +90,11 @@ class FusqlDb(object):
 
         self.cursor.execute(sql)
 
+    def delete_table_element(self, table_name, element_id):
+        '''Removes an element of a table'''
+
+        sql = "DELETE FROM '%s' WHERE id = %d" % (table_name, element_id)
+
+        self.cursor.execute(sql)
+        self.connection.commit()
 
