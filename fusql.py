@@ -9,25 +9,24 @@ import fusqldb
 
 fuse.fuse_python_api = (0, 2)
 
-class Inode:
-    def __init__(self, path, mode, isDir=False):
-        self.path = path
-        self.metadata = fuse.Stat()
+class Metadata(fuse.Stat):
+    def __init__(self, mode, isDir):
+        fuse.Stat.__init__(self)
         
         if isDir:
-            self.metadata.st_mode = S_IFDIR | mode
-            self.metadata.st_nlink = 2
+            self.st_mode = S_IFDIR | mode
+            self.st_nlink = 2
         else:
-            self.metadata.st_mode = S_IFREG | mode
-            self.metadata.st_nlink = 1
-            self.metadata.st_size = 0
+            self.st_mode = S_IFREG | mode
+            self.st_nlink = 1
             
         now = int(time.time())
-        self.metadata.st_atime = now
-        self.metadata.st_mtime = now
-        self.metadata.st_ctime = now
-        self.metadata.st_uid   = os.getuid()
-        self.metadata.st_gid   = os.getgid()
+        self.st_atime = now
+        self.st_mtime = now
+        self.st_ctime = now
+        self.st_uid   = os.getuid()
+        self.st_gid   = os.getgid()
+        self.st_size  = 0
 
 class FuSQL(fuse.Fuse):
     def __init__(self, *args, **kw):
@@ -37,26 +36,46 @@ class FuSQL(fuse.Fuse):
         root_mode = S_IRUSR|S_IXUSR|S_IWUSR|S_IRGRP|S_IXGRP|S_IXOTH|S_IROTH 
         file_mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH 
 
-        # Add root directory
-        self.inodes = {'/': Inode("/", root_mode, True)}
+        # Create shared metadata for files and directories
+        self.dir_metadata = Metadata(root_mode, True)
+        self.file_metadata = Metadata(file_mode, False)
 
+        # Dictionary mapping inode_path -> (size, is_directory)
+        self.inodes = {}
+        self.inodes['/'] = {"size":0, "is_dir":True}
+
+        # Fill with all tables as folders
         for table_name in self.db.get_tables():
             table_path = "/" + table_name
-            self.inodes[table_path] = Inode(table_path, root_mode, True)
+            self.inodes[table_path] = {"size": 0, "is_dir": True}
 
-            for element_id in self.db.get_elements_by_field("id", table_name):
-                element_path = table_path + "/" + str(element_id) + ".ini"
+            table_structure = self.db.get_table_structure(table_name)
 
-                self.inodes[element_path] = Inode(element_path, file_mode, False)
-                
-                element_data = self.db.get_element_data(table_name, element_id)
-                self.inodes[element_path].metadata.st_size = len(element_data)
+            # Fill with all rows as folders
+            for row_id in self.db.get_elements_by_field("id", table_name):
+                row_path = table_path + "/" + str(row_id)
+                self.inodes[row_path] = {"size": 0, "is_dir": True}
+
+                for column in table_structure:
+                    column_name = column[0]
+                    column_type = column[1]
+
+                    column_path = row_path + "/" + column_name + "." + column_type
+
+                    size = self.db.get_element_size(table_name, column_name, row_id)
+                    self.inodes[column_path] = {"size": size, "is_dir": False}
 
     def getattr(self, path):
         if path in self.inodes:
-            return self.inodes[path].metadata
+            if self.inodes[path]["is_dir"]:
+                result = self.dir_metadata
+            else:
+                result = self.file_metadata
+                result.st_size = self.inodes[path]["size"]
         else:
-            return -ENOENT
+            result = -ENOENT
+
+        return result
 
 
     def open(self, path, flags):

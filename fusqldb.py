@@ -49,11 +49,17 @@ class FusqlDb(object):
 
         sql = "PRAGMA TABLE_INFO(%s)" % table
 
+        type_translator = {"TEXT":     "txt",
+                           "INTEGER":  "int"}
+
         self.cursor.execute(sql)
 
         result = []
         for element in self.cursor:
-            result.append((element[1], element[2]))
+            element_name = element[1].encode("ascii")
+            element_type = type_translator[element[2].encode("ascii")]
+
+            result.append((element_name, element_type))
 
         return result
 
@@ -75,6 +81,18 @@ class FusqlDb(object):
         result = result.encode("ascii")
 
         return result
+
+    def get_element_size(self, table_name, element_column, element_id):
+        '''Returns the size of a cell'''
+
+        sql = "SELECT %s FROM '%s' WHERE id = %d" % \
+              (element_column, table_name, element_id)
+
+        self.cursor.execute(sql)
+        response = self.cursor.fetchone()[0]
+        response = str(response)
+
+        return len(response)
 
     def create_table(self, table_name):
         '''Creates a table with an id column'''
