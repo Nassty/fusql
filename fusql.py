@@ -62,8 +62,8 @@ class FuSQL(fuse.Fuse):
 
                     column_path = row_path + "/" + column_name + "." + column_type
 
-                    size = self.db.get_element_size(table_name, column_name, row_id)
-                    self.inodes[column_path] = {"size": size, "is_dir": False}
+                    data = self.db.get_element_data(table_name, column_name, row_id)
+                    self.inodes[column_path] = {"size": len(data), "is_dir": False}
 
     def getattr(self, path):
         if path in self.inodes:
@@ -84,10 +84,17 @@ class FuSQL(fuse.Fuse):
     def read(self, path, size, offset):
         spath = path.split("/")
         table_name = spath[1]
-        element_id = int(spath[2].replace(".ini", ""))
+        element_id = int(spath[2])
 
-        result = self.db.get_element_data(table_name, element_id)
-        result = result[offset:offset+size]
+        element_column = spath[3].split(".")
+        element_column = ".".join(element_column[0:-1])
+
+        data = self.db.get_element_data(table_name, element_column, element_id)
+
+        # Update file size
+        self.inodes[path]["size"] = len(data)
+
+        result = data[offset:offset+size]
 
         return result
 

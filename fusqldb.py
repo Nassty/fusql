@@ -63,7 +63,7 @@ class FusqlDb(object):
 
         return result
 
-    def get_element_data(self, table_name, element_id):
+    def get_element_ini_data(self, table_name, element_id):
         '''Returns ini formated string with all the
            table fields and data'''
 
@@ -82,17 +82,22 @@ class FusqlDb(object):
 
         return result
 
-    def get_element_size(self, table_name, element_column, element_id):
-        '''Returns the size of a cell'''
+    def get_element_data(self, table_name, element_column, element_id):
+        '''Returns the data of a cell'''
 
         sql = "SELECT %s FROM '%s' WHERE id = %d" % \
               (element_column, table_name, element_id)
 
         self.cursor.execute(sql)
         response = self.cursor.fetchone()[0]
-        response = str(response)
+        if response is not None:
+            response = str(response)
+        else:
+            response = ""
 
-        return len(response)
+        response += '\n'
+
+        return response
 
     def create_table(self, table_name):
         '''Creates a table with an id column'''
