@@ -50,7 +50,8 @@ class FusqlDb(object):
         sql = "PRAGMA TABLE_INFO(%s)" % table
 
         type_translator = {"TEXT":     "txt",
-                           "INTEGER":  "int"}
+                           "INTEGER":  "int",
+                           "BLOB":     "jpg"}
 
         self.cursor.execute(sql)
 
@@ -84,6 +85,8 @@ class FusqlDb(object):
 
     def get_element_data(self, table_name, element_column, element_id):
         '''Returns the data of a cell'''
+        
+        result = ""
 
         sql = "SELECT %s FROM '%s' WHERE id = %d" % \
               (element_column, table_name, element_id)
@@ -91,13 +94,14 @@ class FusqlDb(object):
         self.cursor.execute(sql)
         response = self.cursor.fetchone()[0]
         if response is not None:
-            response = str(response)
-        else:
-            response = ""
+            if type(response) == buffer:
+                for b in response:
+                    result += b
+            else:
+                result = str(response)
+                result += '\n'
 
-        response += '\n'
-
-        return response
+        return result
 
     def create_table(self, table_name):
         '''Creates a table with an id column'''
