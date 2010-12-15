@@ -78,7 +78,7 @@ Also tweaking the table names you can get a pseudo-dynamic webapp.
 * the cols named "style" are mapped to "style.css"
 * and the columns named "functions" are mapped to "functions.js". 
 
-Cool usage of this proyect
+Cool usage of this project
 --------------------------
 
 You can run a web browser on top of that and enjoy:
