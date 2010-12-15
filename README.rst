@@ -1,4 +1,4 @@
-QL Linux Version
+FUSQL
 ===================
 
 Main version. Developed under linux. (and now working with OS X!) 
