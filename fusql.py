@@ -19,7 +19,7 @@ import fusqlogger
 fuse.fuse_python_api = (0, 2)
 
 class Metadata(fuse.Stat):
-    @fusqlogger.log
+    @fusqlogger.log()
     def __init__(self, mode, isDir):
         fuse.Stat.__init__(self)
         
@@ -39,7 +39,7 @@ class Metadata(fuse.Stat):
         self.st_size  = 0
 
 class FuSQL(fuse.Fuse):
-    @fusqlogger.log
+    @fusqlogger.log()
     def __init__(self, *args, **kw):
         fuse.Fuse.__init__(self, *args, **kw)
         self.db = fusqldb.FusqlDb("test.db")
@@ -76,7 +76,7 @@ class FuSQL(fuse.Fuse):
                     data = self.db.get_element_data(table_name, column_name, row_id)
                     self.inodes[column_path] = {"size": len(data), "is_dir": False}
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def getattr(self, path):
         if path in self.inodes:
             if self.inodes[path]["is_dir"]:
@@ -90,11 +90,11 @@ class FuSQL(fuse.Fuse):
         return result
 
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def open(self, path, flags):
         return 0
 
-    @fusqlogger.log
+    @fusqlogger.log(showReturn=True)
     def read(self, path, size, offset):
         spath = path.split("/")
         table_name = spath[1]
@@ -112,7 +112,7 @@ class FuSQL(fuse.Fuse):
 
         return result
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def mknod(self, path, mode, rdev):
         spath = path.split("/")
 
@@ -141,16 +141,15 @@ class FuSQL(fuse.Fuse):
 
         return 0
 
-    @fusqlogger.log
+    @fusqlogger.log(showReturn=True)
     def write(self, path, buf, offset, fh=None):
         return len(buf)
         
-    
-    @fusqlogger.log
+    @fusqlogger.log(showReturn=True)
     def truncate(self, path, size, fh=None):
         return 0
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def unlink(self, path):
         spath = path.split("/")
         table_name = spath[1]
@@ -161,7 +160,7 @@ class FuSQL(fuse.Fuse):
 
         return 0
 
-    @fusqlogger.log
+    @fusqlogger.log(showReturn=True)
     def rename(self, path_from, path_to):
         spath_from = path_from.split("/")
         spath_to = path_to.split("/")
@@ -173,7 +172,7 @@ class FuSQL(fuse.Fuse):
         id_to = int(spath_to[2].replace(".ini", ""))
 
         if table_from != table_to:
-            return -1
+            return -EINVAL
 
         
         self.db.update_table_field_by_id(table_to, id_from, "id", id_to)
@@ -189,14 +188,14 @@ class FuSQL(fuse.Fuse):
 
         return 0
     
-    @fusqlogger.log
+    @fusqlogger.log()
     def chmod(self, path, mode):
         metadata = self.inodes[path].metadata
         metadata.st_mode = mode
         metadata.st_ctime = time.time()
         return 0
     
-    @fusqlogger.log
+    @fusqlogger.log()
     def chown(self, path, uid, gid):
         metadata = self.inodes[path].metadata
         metadata.st_gid = uid
@@ -204,7 +203,7 @@ class FuSQL(fuse.Fuse):
         metadata.st_ctime = time.time()
         return 0
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def utime(self, path, times):
         metadata = self.inodes[path].metadata
 
@@ -214,7 +213,7 @@ class FuSQL(fuse.Fuse):
         metadata.st_ctime = now
         return 0
 
-    @fusqlogger.log
+    @fusqlogger.log(showReturn=True)
     def mkdir(self, path, mode):
         spath = path.split("/")
 
@@ -258,7 +257,7 @@ class FuSQL(fuse.Fuse):
 
         return 0
 
-    @fusqlogger.log
+    @fusqlogger.log(showReturn=True)
     def rmdir(self, path):
         spath = path.split("/")
         result = 0
@@ -292,7 +291,7 @@ class FuSQL(fuse.Fuse):
 
         return result
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def readdir(self, path, offset):
         result = ['.', '..']
 
@@ -310,7 +309,7 @@ class FuSQL(fuse.Fuse):
         for i in result:
                 yield fuse.Direntry(i)
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def release(self, path, fh=None):
         return 0
 

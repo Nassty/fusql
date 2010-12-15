@@ -8,7 +8,7 @@ import sqlite3
 import fusqlogger
 
 class FusqlDb(object):
-    @fusqlogger.log
+    @fusqlogger.log()
     def __init__(self, database):
         '''Main api to control the database management'''
 
@@ -16,7 +16,7 @@ class FusqlDb(object):
         self.connection = sqlite3.connect(database, check_same_thread=False)
         self.cursor = self.connection.cursor()
         
-    @fusqlogger.log
+    @fusqlogger.log()
     def get_element_by_id(self, table_name, element_id):
         '''Returns all elements of table's
            row with a certain id'''
@@ -26,7 +26,7 @@ class FusqlDb(object):
         response = self.cursor.execute(sql)
         return response.fetchone() 
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def get_all_elements(self, table_name):
         '''Returs all elements of a table'''
         
@@ -35,7 +35,7 @@ class FusqlDb(object):
         response = self.cursor.execute(sql)
         return response.fetchall()
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def get_elements_by_field(self, field, table):
         '''Returns an specific field of a table'''
 
@@ -44,7 +44,7 @@ class FusqlDb(object):
         response = self.cursor.execute(sql)
         return [x[0] for x in response]
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def get_tables(self):
         '''Returns a list with the names of 
            the database tables'''
@@ -59,7 +59,7 @@ class FusqlDb(object):
             result.append(element[0].encode("ascii"))
         return result
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def get_table_structure(self, table):
         '''Returns a list of tuples (name, type) with the
            table columns name and type'''
@@ -94,7 +94,7 @@ class FusqlDb(object):
 
         return result
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def get_element_ini_data(self, table_name, element_id):
         '''Returns ini formated string with all the
            table fields and data'''
@@ -114,7 +114,7 @@ class FusqlDb(object):
 
         return result
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def get_element_data(self, table_name, element_column, element_id):
         '''Returns the data of a cell'''
         
@@ -138,7 +138,7 @@ class FusqlDb(object):
 
         return result
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def create_table(self, table_name):
         '''Creates a table with an id column'''
 
@@ -148,7 +148,7 @@ class FusqlDb(object):
         self.cursor.execute(sql)
         self.connection.commit()
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def create_row(self, table_name, element_id):
         '''Creates a row in a table with an id'''
 
@@ -158,7 +158,7 @@ class FusqlDb(object):
         self.cursor.execute(sql)
         self.connection.commit()
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def delete_table(self, table_name):
         '''Removes a table from the database'''
 
@@ -167,7 +167,7 @@ class FusqlDb(object):
         self.cursor.execute(sql)
         self.connection.commit()
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def create_table_element(self, table_name, element_id):
         '''Creates a table element'''
 
@@ -176,7 +176,7 @@ class FusqlDb(object):
         self.cursor.execute(sql)
         self.connection.commit()
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def delete_table_element(self, table_name, element_id):
         '''Removes an element of a table'''
 
@@ -185,7 +185,7 @@ class FusqlDb(object):
         self.cursor.execute(sql)
         self.connection.commit()
 
-    @fusqlogger.log
+    @fusqlogger.log()
     def update_table_field_by_id(self, table_name, element_id, field, value):
         '''Modifies a table field'''
 
