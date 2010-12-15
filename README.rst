@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ===================
 FUSQL Linux Version
 ===================
@@ -43,4 +44,9 @@ will be visualized as the following :
     address = example
     phone = 1234
     city = Cordoba
+=======
+FUSQL -ALT
+
+===
+>>>>>>> 930ffaefe088c4a2a1ea0c969d23908149c254db
 
