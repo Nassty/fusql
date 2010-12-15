@@ -169,24 +169,33 @@ class FuSQL(fuse.Fuse):
         table_from = spath_from[1]
         table_to = spath_to[1]
         
-        id_from = int(spath_from[2].replace(".ini", ""))
-        id_to = int(spath_to[2].replace(".ini", ""))
-
-        if table_from != table_to:
+        # Must be at the same deep
+        if len(spath_from) != len(spath_to):
             return -EINVAL
 
+        if len(spath_from) == 3:
+            # If its a row
+            id_from = int(spath_from[2])
+            id_to = int(spath_to[2])
+
+            if table_from != table_to:
+                return -EINVAL
+
+            self.db.update_table_field_by_id(table_to, id_from, "id", id_to)
+            
+        else:
+            # If its a table
+
+            self.db.rename_table(table_from, table_to)
+            
+        inodes = self.inodes.copy()
+        for dir_name in inodes:
+            if dir_name.startswith(path_from):
+                dir_to = dir_name.replace(path_from, path_to)
+                self.inodes[dir_to] = self.inodes[dir_name]
+                self.inodes.pop(dir_name)
+
         
-        self.db.update_table_field_by_id(table_to, id_from, "id", id_to)
-        
-        self.inodes[path_to] = self.inodes[path_from]
-
-        # Update node data
-        element_data = self.db.get_element_data(table_to, id_to)
-        self.inodes[path_to].path = path_to
-        self.inodes[path_to].metadata.st_size = len(element_data)
-
-        self.inodes.pop(path_from)
-
         return 0
     
     @fusqlogger.log()
