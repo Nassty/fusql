@@ -152,13 +152,6 @@ class FuSQL(fuse.Fuse):
 
     @fusqlogger.log()
     def unlink(self, path):
-        spath = path.split("/")
-        table_name = spath[1]
-        element_id = int(spath[2].replace(".ini", ""))
-
-        self.db.delete_table_element(table_name, element_id)
-        self.inodes.pop(path)
-
         return 0
 
     @fusqlogger.log(showReturn=True)

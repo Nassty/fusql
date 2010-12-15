@@ -1,18 +1,55 @@
+===================
 FUSQL
 ===================
 
 Main version. Developed under linux. (and now working with OS X!) 
 
 Fusql works as a interface between a relational database (sqlite for
-now) and a filesystem. Each table is represented as a directory and each
-row is represented as a collection of files.
+now) and a filesystem. Each table is represented as a directory, each
+row is represented as a folder inside a table folder and each column
+is represented as a file inside a row folder.
 
-We're supporting creating / deleting and modifying tables and table
-structures as a experimental features. This took about 6 hours in a
-sunday. (and we keep doing it)
+Actually Supported
+------------------
+
+fusql now supports:
+
+* list tables, rows and columns
+* create/delete tables creating or deleting folders on the root directory
+* create/delete rows creating or deleting folders inside a table folder
+* create columns creating a file inside any row (it will update the other rows)
+* rename tables or rows just renaming the respective folder
+* view a cell content just reading the content of the respective column inside a row
+
+Instalation and Running
+-----------------------
+
+To run it, make sure you have Fuse installed, and python bindings
+(check http://fuse.sourceforge.net/) and for python bindings in ubuntu
+use the package python-fuse, for other distros you should investigate.
+Once you have that you can run it using:
+::
+    $ python fusqldb.py -f mnt_folder
+
+
+And if you don't want to view the debug
+::
+    $ python fusqldb.py mnt_folder
+
+
+To unmount it you can run
+::
+    $ fusermount -u mnt_folder
+
+
+License
+-------
+
+Fusql it's now using DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+to read more about it reed file LICENSE
 
 Example:
-========
+--------
 
 A database like:
 
@@ -40,7 +77,10 @@ Also tweaking the table names you can get a pseudo-dynamic webapp.
 * The cols named "start" are  mapped to "index.html"
 * the cols named "style" are mapped to "style.css"
 * and the columns named "functions" are mapped to "functions.js". 
-  
+
+Cool usage of this proyect
+--------------------------
+
 You can run a web browser on top of that and enjoy:
 ::
     $ mkdir tmp
