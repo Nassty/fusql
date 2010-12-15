@@ -215,7 +215,7 @@ class FuSQL(fuse.Fuse):
             try:
                 element_id = int(spath[2])
             except ValueError:
-                return -EPERM
+                return -EFAULT
 
             self.db.create_row(table_name, element_id)
 
@@ -236,17 +236,36 @@ class FuSQL(fuse.Fuse):
         return 0
 
     def rmdir(self, path):
+        spath = path.split("/")
         result = 0
-        table_name = path.split("/")[1]
 
-        table_elements = self.db.get_all_elements(table_name)
+        if len(spath) == 2:
+            is_table = True
+        elif len(spath) == 3:
+            is_table = False
 
-        if len(table_elements) == 0:
-            self.db.delete_table(table_name)
-            self.inodes.pop(path)
+        table_name = spath[1]
+
+        def remove_paths(path):
+            inodes = self.inodes.copy()
+
+            for i in inodes:
+                if i.startswith(path):
+                    self.inodes.pop(i)
+
+        if is_table:
+            table_elements = self.db.get_all_elements(table_name)
+
+            if len(table_elements) == 0:
+                self.db.delete_table(table_name)
+                remove_paths(path)
+            else:
+                result = -ENOTEMPTY
         else:
-            result = -ENOTEMPTY
-    
+            row_id = int(spath[2])
+            self.db.delete_table_element(table_name, row_id)
+            remove_paths(path)
+
         return result
 
     def readdir(self, path, offset):
