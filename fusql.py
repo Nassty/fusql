@@ -203,31 +203,77 @@ class FuSQL(fuse.Fuse):
     def mkdir(self, path, mode):
         spath = path.split("/")
 
-        # Folders can be only created at the root
-        if len(spath) != 2:
+        # Folders can only be at the root (if it's a tables)
+        # or inside another folder (if it's a row)
+        if len(spath) == 2:
+            is_table = True
+        elif len(spath) == 3:
+            is_table = False
+        else:
             return -EFAULT
 
         table_name = spath[1]
-
-        self.db.create_table(table_name)
-
         table_path = "/" + table_name
-        self.inodes[table_path] = Inode(table_path, mode, True)
+
+        if is_table:
+            self.db.create_table(table_name)
+
+            self.inodes[table_path] = {"size": 0, "is_dir": True}
+        else:
+            try:
+                element_id = int(spath[2])
+            except ValueError:
+                return -EFAULT
+
+            self.db.create_row(table_name, element_id)
+
+            row_path = table_path + "/" + str(element_id)
+            self.inodes[row_path] = {"size": 0, "is_dir": True}
+            
+            table_structure = self.db.get_table_structure(table_name)
+            # Fill the row with the column files
+
+            for column in table_structure:
+                column_name = column[0]
+                column_type = column[1]
+
+                column_path = row_path + "/" + column_name + "." + column_type
+
+                self.inodes[column_path] = {"size": 0, "is_dir": False}
 
         return 0
 
     def rmdir(self, path):
+        spath = path.split("/")
         result = 0
-        table_name = path.split("/")[1]
 
-        table_elements = self.db.get_all_elements(table_name)
+        if len(spath) == 2:
+            is_table = True
+        elif len(spath) == 3:
+            is_table = False
 
-        if len(table_elements) == 0:
-            self.db.delete_table(table_name)
-            self.inodes.pop(path)
+        table_name = spath[1]
+
+        def remove_paths(path):
+            inodes = self.inodes.copy()
+
+            for i in inodes:
+                if i.startswith(path):
+                    self.inodes.pop(i)
+
+        if is_table:
+            table_elements = self.db.get_all_elements(table_name)
+
+            if len(table_elements) == 0:
+                self.db.delete_table(table_name)
+                remove_paths(path)
+            else:
+                result = -ENOTEMPTY
         else:
-            result = -ENOTEMPTY
-    
+            row_id = int(spath[2])
+            self.db.delete_table_element(table_name, row_id)
+            remove_paths(path)
+
         return result
 
     def readdir(self, path, offset):

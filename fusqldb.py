@@ -63,7 +63,9 @@ class FusqlDb(object):
 
         type_translator = {"TEXT":     "txt",
                            "INTEGER":  "int",
-                           "BLOB":     "jpg"}
+                           "BLOB":     "bin"}
+
+        # TODO: Magic to guess file mimetype if it's a binary file
 
         self.cursor.execute(sql)
 
@@ -127,6 +129,14 @@ class FusqlDb(object):
 
         sql = "CREATE TABLE '%s' " % table_name
         sql += "('id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)"
+        self.cursor.execute(sql)
+        self.connection.commit()
+
+    def create_row(self, table_name, element_id):
+        '''Creates a row in a table with an id'''
+
+        sql = "INSERT INTO '%s' (id) VALUES (%d)" % (table_name, element_id)
+
         self.cursor.execute(sql)
         self.connection.commit()
 
