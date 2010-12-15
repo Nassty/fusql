@@ -35,9 +35,13 @@ will be visualized as the following :
     $ cat users/1/username.txt
     j0hn
 
-Also tweaking the table names you can get a pseudo-dynamic webapp. The cols named _"start"_ are 
-mapped to _"index.html"_, the columns named _"style"_ are mapped to _"style.css"_ and the columns
-named "functions" are mapped to _"functions.js"_. You can run a web browser on top of that and enjoy:
+Also tweaking the table names you can get a pseudo-dynamic webapp. 
+
+* The cols named "start" are  mapped to "index.html"
+* the cols named "style" are mapped to "style.css"
+* and the columns named "functions" are mapped to "functions.js". 
+  
+You can run a web browser on top of that and enjoy:
 ::
     $ mkdir tmp
     $ python fusql.py -f tmp &
