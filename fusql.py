@@ -13,8 +13,10 @@ from stat import *
 import fuse
 import os
 import time
+
 import fusqldb
 import fusqlogger
+import common
 
 fuse.fuse_python_api = (0, 2)
 
@@ -112,32 +114,31 @@ class FuSQL(fuse.Fuse):
 
         return result
 
-    @fusqlogger.log()
+    @fusqlogger.log(showReturn=True)
     def mknod(self, path, mode, rdev):
         spath = path.split("/")
 
-        # Not allowed more deep than 1 folder
-        # Or files on root
-        if len(spath) != 3:
+        # Files MUST be inside a table and a row
+        if len(spath) != 4:
             return -EPERM
         
-        # Files must end in .ini
-        if not spath[2].endswith(".ini"):
+        # Files must end in a known type
+        file_type = spath[3].split(".")[-1]
+        if file_type not in common.FILE_TYPE_TRANSLATOR.keys():
             return -EPERM
 
         table_name = spath[1]
+        element_id = int(spath[2])
+        column_name = ".".join(spath[3].split(".")[0:-1])
+        column_type = common.FILE_TYPE_TRANSLATOR[file_type]
 
-        try:
-            element_id = int(spath[2].replace(".ini", ""))
-        except ValueError:
-            # Invalid file name, must be a number
-            return -EPERM
+        self.db.create_column(table_name, column_name, column_type)
 
-        self.db.create_table_element(table_name, element_id)
-        self.inodes[path] = Inode(path, mode)
-        
-        element_data = self.db.get_element_data(table_name, element_id)
-        self.inodes[path].metadata.st_size = len(element_data)
+        # TODO: fill all elements of the table
+        for dir_name in self.inodes.keys():
+            if dir_name.startswith("/" + table_name + "/"):
+                new_column_path = dir_name + "/" + column_name + "." + file_type
+                self.inodes[new_column_path] = {"size": 0, "is_dir": False}
 
         return 0
 
@@ -190,27 +191,14 @@ class FuSQL(fuse.Fuse):
     
     @fusqlogger.log()
     def chmod(self, path, mode):
-        metadata = self.inodes[path].metadata
-        metadata.st_mode = mode
-        metadata.st_ctime = time.time()
         return 0
     
     @fusqlogger.log()
     def chown(self, path, uid, gid):
-        metadata = self.inodes[path].metadata
-        metadata.st_gid = uid
-        metadata.st_gid = gid
-        metadata.st_ctime = time.time()
         return 0
 
     @fusqlogger.log()
     def utime(self, path, times):
-        metadata = self.inodes[path].metadata
-
-        now = time.time()
-        metadata.st_atime = now
-        metadata.st_mtime = now
-        metadata.st_ctime = now
         return 0
 
     @fusqlogger.log(showReturn=True)

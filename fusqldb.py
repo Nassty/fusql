@@ -5,7 +5,9 @@
 # http://sam.zoy.org/wtfpl/COPYING for more details. 
 
 import sqlite3
+
 import fusqlogger
+import common
 
 class FusqlDb(object):
     @fusqlogger.log()
@@ -72,10 +74,6 @@ class FusqlDb(object):
                            "style":    "css",
                            "functions":"js"}
 
-        type_translator = {"TEXT":     "txt",
-                           "INTEGER":  "int",
-                           "BLOB":     "bin"}
-
         # TODO: Magic to guess file mimetype if it's a binary file
 
         self.cursor.execute(sql)
@@ -86,7 +84,7 @@ class FusqlDb(object):
             if element_name in special_cases.keys():
                 element_type = special_cases[element_name]
             else:
-                element_type = type_translator[element[2].encode("ascii")]
+                element_type = common.DB_TYPE_TRANSLATOR[element[2].encode("ascii")]
             if element_name == "start": # I can't name a column index,
                                         # so I handle it here
                 element_name = "index"
@@ -153,6 +151,17 @@ class FusqlDb(object):
         '''Creates a row in a table with an id'''
 
         sql = "INSERT INTO '%s' (id) VALUES (%d)" % (table_name, element_id)
+        fusqlogger.dump(sql)
+
+        self.cursor.execute(sql)
+        self.connection.commit()
+
+    @fusqlogger.log()
+    def create_column(self, table_name, column_name, column_type):
+        '''Creates a column in a table'''
+
+        sql = "ALTER TABLE '%s' ADD COLUMN '%s' %s" % \
+              (table_name, column_name, column_type)
         fusqlogger.dump(sql)
 
         self.cursor.execute(sql)
