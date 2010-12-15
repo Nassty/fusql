@@ -4,10 +4,11 @@
 # To Public License, Version 2, as published by Sam Hocevar. See
 # http://sam.zoy.org/wtfpl/COPYING for more details. 
 
-
 import sqlite3
+import fusqlogger
 
 class FusqlDb(object):
+    @fusqlogger.log
     def __init__(self, database):
         '''Main api to control the database management'''
 
@@ -15,33 +16,41 @@ class FusqlDb(object):
         self.connection = sqlite3.connect(database, check_same_thread=False)
         self.cursor = self.connection.cursor()
         
+    @fusqlogger.log
     def get_element_by_id(self, table_name, element_id):
         '''Returns all elements of table's
            row with a certain id'''
 
         sql = "SELECT * FROM '%s' WHERE id = %d" % (table_name, element_id)
+        fusqlogger.dump(sql)
         response = self.cursor.execute(sql)
         return response.fetchone() 
 
+    @fusqlogger.log
     def get_all_elements(self, table_name):
         '''Returs all elements of a table'''
         
         sql = "SELECT * FROM '%s'" % table_name
+        fusqlogger.dump(sql)
         response = self.cursor.execute(sql)
         return response.fetchall()
 
+    @fusqlogger.log
     def get_elements_by_field(self, field, table):
         '''Returns an specific field of a table'''
 
         sql = "SELECT %s from %s" %(field, table)
+        fusqlogger.dump(sql)
         response = self.cursor.execute(sql)
         return [x[0] for x in response]
 
+    @fusqlogger.log
     def get_tables(self):
         '''Returns a list with the names of 
            the database tables'''
 
         sql = "SELECT name FROM sqlite_master WHERE name != 'sqlite_sequence'"
+        fusqlogger.dump(sql)
 
         self.cursor.execute(sql)
 
@@ -50,11 +59,13 @@ class FusqlDb(object):
             result.append(element[0].encode("ascii"))
         return result
 
+    @fusqlogger.log
     def get_table_structure(self, table):
         '''Returns a list of tuples (name, type) with the
            table columns name and type'''
 
         sql = "PRAGMA TABLE_INFO(%s)" % table
+        fusqlogger.dump(sql)
         # I plan handle sites here. 
         special_cases =   {"start":    "html",
                            "page":     "html",
@@ -83,6 +94,7 @@ class FusqlDb(object):
 
         return result
 
+    @fusqlogger.log
     def get_element_ini_data(self, table_name, element_id):
         '''Returns ini formated string with all the
            table fields and data'''
@@ -102,6 +114,7 @@ class FusqlDb(object):
 
         return result
 
+    @fusqlogger.log
     def get_element_data(self, table_name, element_column, element_id):
         '''Returns the data of a cell'''
         
@@ -111,6 +124,7 @@ class FusqlDb(object):
 
         sql = "SELECT %s FROM '%s' WHERE id = %d" % \
               (element_column, table_name, element_id)
+        fusqlogger.dump(sql)
 
         self.cursor.execute(sql)
         response = self.cursor.fetchone()[0]
@@ -124,48 +138,60 @@ class FusqlDb(object):
 
         return result
 
+    @fusqlogger.log
     def create_table(self, table_name):
         '''Creates a table with an id column'''
 
         sql = "CREATE TABLE '%s' " % table_name
         sql += "('id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)"
+        fusqlogger.dump(sql)
         self.cursor.execute(sql)
         self.connection.commit()
 
+    @fusqlogger.log
     def create_row(self, table_name, element_id):
         '''Creates a row in a table with an id'''
 
         sql = "INSERT INTO '%s' (id) VALUES (%d)" % (table_name, element_id)
+        fusqlogger.dump(sql)
 
         self.cursor.execute(sql)
         self.connection.commit()
 
+    @fusqlogger.log
     def delete_table(self, table_name):
         '''Removes a table from the database'''
 
         sql = "DROP TABLE '%s'" % table_name
+        fusqlogger.dump(sql)
         self.cursor.execute(sql)
         self.connection.commit()
 
+    @fusqlogger.log
     def create_table_element(self, table_name, element_id):
         '''Creates a table element'''
 
         sql = "INSERT INTO '%s' (id) VALUES (%d)" % (table_name, element_id)
+        fusqlogger.dump(sql)
         self.cursor.execute(sql)
         self.connection.commit()
 
+    @fusqlogger.log
     def delete_table_element(self, table_name, element_id):
         '''Removes an element of a table'''
 
         sql = "DELETE FROM '%s' WHERE id = %d" % (table_name, element_id)
+        fusqlogger.dump(sql)
         self.cursor.execute(sql)
         self.connection.commit()
 
+    @fusqlogger.log
     def update_table_field_by_id(self, table_name, element_id, field, value):
         '''Modifies a table field'''
 
         sql = "UPDATE '%s' SET '%s' = '%s' WHERE id = %d" \
               % (table_name, field, value, element_id)
+        fusqlogger.dump(sql)
 
         self.cursor.execute(sql)
         self.connection.commit()
