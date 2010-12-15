@@ -1,3 +1,10 @@
+# This program is free software. It comes without any warranty, to
+# the extent permitted by applicable law. You can redistribute it
+# and/or modify it under the terms of the Do What The Fuck You Want
+# To Public License, Version 2, as published by Sam Hocevar. See
+# http://sam.zoy.org/wtfpl/COPYING for more details. 
+
+
 import sqlite3
 
 class FusqlDb(object):
@@ -48,6 +55,11 @@ class FusqlDb(object):
            table columns name and type'''
 
         sql = "PRAGMA TABLE_INFO(%s)" % table
+        # I plan handle sites here. 
+        special_cases =   {"start":    "html",
+                           "page":     "html",
+                           "style":    "css",
+                           "functions":"js"}
 
         type_translator = {"TEXT":     "txt",
                            "INTEGER":  "int",
@@ -58,8 +70,13 @@ class FusqlDb(object):
         result = []
         for element in self.cursor:
             element_name = element[1].encode("ascii")
-            element_type = type_translator[element[2].encode("ascii")]
-
+            if element_name in special_cases.keys():
+                element_type = special_cases[element_name]
+            else:
+                element_type = type_translator[element[2].encode("ascii")]
+            if element_name == "start": # I can't name a column index,
+                                        # so I handle it here
+                element_name = "index"
             result.append((element_name, element_type))
 
         return result
@@ -87,6 +104,8 @@ class FusqlDb(object):
         '''Returns the data of a cell'''
         
         result = ""
+        if element_column == "index":
+            element_column = "start"
 
         sql = "SELECT %s FROM '%s' WHERE id = %d" % \
               (element_column, table_name, element_id)
