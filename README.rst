@@ -20,6 +20,7 @@ fusql now supports:
 * create columns creating a file inside any row (it will update the other rows)
 * rename tables or rows just renaming the respective folder
 * view a cell content just reading the content of the respective column inside a row
+* write on column files (still a little buggy)
 
 Instalation and Running
 -----------------------
