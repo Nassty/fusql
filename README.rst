@@ -21,7 +21,6 @@ fusql now supports:
 * rename tables or rows just renaming the respective folder
 * view a cell content just reading the content of the respective column inside a row
 * write on column files (still a little buggy)
-
 * binary file support it's still experimental
 
 Instalation and Running

@@ -139,10 +139,13 @@ class FuSQL(fuse.Fuse):
         self.db.create_column(table_name, column_name, column_type)
 
         # TODO: fill all elements of the table
+        new_elements = []
         for dir_name in self.paths:
             if dir_name.startswith("/" + table_name + "/"):
                 new_column_path = dir_name + "/" + column_name + "." + file_type
-                self.paths.append(new_column_path)
+                new_elements.append(new_column_path)
+
+        self.paths = self.paths + new_elements
 
         return 0
 
