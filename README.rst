@@ -22,6 +22,8 @@ fusql now supports:
 * view a cell content just reading the content of the respective column inside a row
 * write on column files (still a little buggy)
 
+* binary file support it's still experimental
+
 Instalation and Running
 -----------------------
 
@@ -73,14 +75,14 @@ will be visualized as the following :
     $ cat users/1/username.txt
     j0hn
 
-Also tweaking the table names you can get a pseudo-dynamic webapp. 
+
+Cool usage of this project
+--------------------------
+Tweaking the table names you can get a pseudo-dynamic webapp. 
 
 * The cols named "start" are  mapped to "index.html"
 * the cols named "style" are mapped to "style.css"
 * and the columns named "functions" are mapped to "functions.js". 
-
-Cool usage of this project
---------------------------
 
 You can run a web browser on top of that and enjoy:
 ::
