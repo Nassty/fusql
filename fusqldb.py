@@ -4,10 +4,11 @@
 # To Public License, Version 2, as published by Sam Hocevar. See
 # http://sam.zoy.org/wtfpl/COPYING for more details. 
 
+import time
 import sqlite3
 
-import fusqlogger
 import common
+import fusqlogger
 
 class FusqlDb(object):
     @fusqlogger.log()
@@ -17,17 +18,36 @@ class FusqlDb(object):
         self.database = database
         self.connection = sqlite3.connect(database, check_same_thread=False)
         self.cursor = self.connection.cursor()
+        self.cache = {}
+        self.cache_time = 2 # seconds
 
     def execute_sql(self, sql, commit=True, dump=True):
         '''Executes sql, commits the database and logs the sql'''
 
+        if sql in self.cache.keys():
+            now = time.time()
+            
+            # if we hit on cache, and it's not *too* old
+            # we use, cached version
+            if (now - self.cache[sql][1]) < self.cache_time:
+                previous = self.cache[sql]
+
+                fusqlogger.dump(sql, cached=True)
+                return previous[0]
+
         self.cursor.execute(sql)
+        response = [x for x in self.cursor]
+
+        if sql.count("SELECT"):
+            self.cache[sql] = (response, time.time())
 
         if commit:
             self.connection.commit()
         
         if dump:
             fusqlogger.dump(sql)
+
+        return response
         
     @fusqlogger.log()
     def get_element_by_id(self, table_name, element_id):
@@ -36,23 +56,23 @@ class FusqlDb(object):
 
         sql = "SELECT * FROM '%s' WHERE id = %d" % (table_name, element_id)
         response = self.execute_sql(sql, False)
-        return response.fetchone() 
+        return response[0]
 
     @fusqlogger.log()
     def get_all_elements(self, table_name):
         '''Returs all elements of a table'''
         
         sql = "SELECT * FROM '%s'" % table_name
-        self.execute_sql(sql, False)
-        return self.cursor.fetchall()
+        response = self.execute_sql(sql, False)
+        return response
 
     @fusqlogger.log()
     def get_elements_by_field(self, field, table):
         '''Returns an specific field of a table'''
 
         sql = "SELECT %s from %s" %(field, table)
-        self.execute_sql(sql, False)
-        return [x[0] for x in self.cursor]
+        response = self.execute_sql(sql, False)
+        return [x[0] for x in response]
 
     @fusqlogger.log()
     def get_tables(self):
@@ -60,10 +80,10 @@ class FusqlDb(object):
            the database tables'''
 
         sql = "SELECT name FROM sqlite_master WHERE name != 'sqlite_sequence'"
-        self.execute_sql(sql, False)
+        response = self.execute_sql(sql, False)
 
         result = []
-        for element in self.cursor:
+        for element in response:
             result.append(element[0].encode("ascii"))
         return result
 
@@ -77,10 +97,10 @@ class FusqlDb(object):
 
         # TODO: Magic to guess file mimetype if it's a binary file
 
-        self.execute_sql(sql, False)
+        response = self.execute_sql(sql, False)
 
         result = []
-        for element in self.cursor:
+        for element in response:
             element_name = element[1].encode("ascii")
             if element_name in common.FILE_SPECIAL_CASES.keys():
                 element_type = common.FILE_SPECIAL_CASES[element_name]
@@ -123,9 +143,9 @@ class FusqlDb(object):
 
         sql = "SELECT %s FROM '%s' WHERE id = %d" % \
               (element_column, table_name, element_id)
-        self.execute_sql(sql, False)
+        response = self.execute_sql(sql, False)
 
-        response = self.cursor.fetchone()[0]
+        response = response[0][0]
         if response is not None:
             if type(response) == buffer:
                 for b in response:

@@ -51,9 +51,14 @@ def log(skip=False, showReturn=False):
         return handler
     return _log
 
-def dump(msg):
+def dump(msg, cached=False):
     colorize = colors()
-    print "[SQL] dumped : %s" % colorize.dump(msg) 
+    if cached:
+        print "[CACHE]",
+    else:
+        print "[SQL] ",
+
+    print "dumped : %s" % colorize.dump(msg) 
 if __name__ == "__main__":
     @log()
     def asd(*args, **kw):
