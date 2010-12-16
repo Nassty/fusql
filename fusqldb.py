@@ -18,14 +18,16 @@ class FusqlDb(object):
         self.connection = sqlite3.connect(database, check_same_thread=False)
         self.cursor = self.connection.cursor()
 
-    def execute_sql(self, sql, commit=True):
+    def execute_sql(self, sql, commit=True, dump=True):
         '''Executes sql, commits the database and logs the sql'''
 
-        fusqlogger.dump(sql)
         self.cursor.execute(sql)
 
         if commit:
             self.connection.commit()
+        
+        if dump:
+            fusqlogger.dump(sql)
         
     @fusqlogger.log()
     def get_element_by_id(self, table_name, element_id):
@@ -137,13 +139,13 @@ class FusqlDb(object):
 
         return result
     
-    @fusqlogger.log()
+    @fusqlogger.log(True)
     def set_element_data(self, table_name, column_name, element_id, value):
         '''Modifies a table field'''
 
         sql = "UPDATE '%s' SET '%s' = '%s' WHERE id = %d" \
               % (table_name, column_name, value, element_id)
-        self.execute_sql(sql)
+        self.execute_sql(sql, dump=False)
 
     @fusqlogger.log()
     def create_table(self, table_name):

@@ -54,20 +54,20 @@ class FuSQL(fuse.Fuse):
         self.file_metadata = Metadata(file_mode, False)
 
         # Dictionary mapping inode_path -> (size, is_directory)
-        self.inodes = {}
-        self.inodes['/'] = {"size":0, "is_dir":True}
+        self.paths = []
+        self.paths.append('/')
 
         # Fill with all tables as folders
         for table_name in self.db.get_tables():
             table_path = "/" + table_name
-            self.inodes[table_path] = {"size": 0, "is_dir": True}
+            self.paths.append(table_path)
 
             table_structure = self.db.get_table_structure(table_name)
 
             # Fill with all rows as folders
             for row_id in self.db.get_elements_by_field("id", table_name):
                 row_path = table_path + "/" + str(row_id)
-                self.inodes[row_path] = {"size": 0, "is_dir": True}
+                self.paths.append(row_path)
 
                 for column in table_structure:
                     column_name = column[0]
@@ -75,19 +75,21 @@ class FuSQL(fuse.Fuse):
 
                     column_path = row_path + "/" + column_name + "." + column_type
 
-                    self.inodes[column_path] = {"size": 0, "is_dir": False}
+                    self.paths.append(column_path)
 
     @fusqlogger.log()
     def getattr(self, path):
         spath = path.split("/")
 
-        if path in self.inodes:
-            if self.inodes[path]["is_dir"]:
+        is_dir = len(spath) != 4
+
+        if path in self.paths:
+            if is_dir:
                 result = self.dir_metadata
             else:
                 table_name = spath[1]
                 row_id = int(spath[2])
-                column_name = ".".join(spath[3].split(".")[0:-1])
+                column_name = spath[3].rsplit(".", 1)[0]
                 data = self.db.get_element_data(table_name, column_name, row_id)
 
                 result = self.file_metadata
@@ -102,19 +104,15 @@ class FuSQL(fuse.Fuse):
     def open(self, path, flags):
         return 0
 
-    @fusqlogger.log(showReturn=True)
+    @fusqlogger.log()
     def read(self, path, size, offset):
         spath = path.split("/")
         table_name = spath[1]
         element_id = int(spath[2])
 
-        element_column = spath[3].split(".")
-        element_column = ".".join(element_column[0:-1])
+        element_column = spath[3].rsplit(".", 1)[0]
 
         data = self.db.get_element_data(table_name, element_column, element_id)
-
-        # Update file size
-        self.inodes[path]["size"] = len(data)
 
         result = data[offset:offset+size]
 
@@ -135,22 +133,40 @@ class FuSQL(fuse.Fuse):
 
         table_name = spath[1]
         element_id = int(spath[2])
-        column_name = ".".join(spath[3].split(".")[0:-1])
+        column_name = spath[3].rsplit(".", 1)[0]
         column_type = common.FILE_TYPE_TRANSLATOR[file_type]
 
         self.db.create_column(table_name, column_name, column_type)
 
         # TODO: fill all elements of the table
-        for dir_name in self.inodes.keys():
+        for dir_name in self.paths:
             if dir_name.startswith("/" + table_name + "/"):
                 new_column_path = dir_name + "/" + column_name + "." + file_type
-                self.inodes[new_column_path] = {"size": 0, "is_dir": False}
+                self.paths.append(new_column_path)
 
         return 0
 
     @fusqlogger.log(showReturn=True)
     def write(self, path, buf, offset, fh=None):
-        return len(buf)
+        spath = path.split("/")
+
+        table_name = spath[1]
+        row_id = int(spath[2])
+        column_name = spath[3].rsplit(".", 1)[0]
+
+        prev_data = self.db.get_element_data(table_name, column_name, row_id)
+        prev_size = len(prev_data)
+
+        write_size = len(buf)
+
+        if offset + write_size > prev_size:
+            self.truncate(path, offset + write_size)
+        
+        new_data = prev_data[:offset] + buf + prev_data[offset+len(buf):]
+
+        self.db.set_element_data(table_name, column_name, row_id, new_data)
+
+        return write_size
         
     @fusqlogger.log()
     def truncate(self, path, size, fh=None):
@@ -158,7 +174,7 @@ class FuSQL(fuse.Fuse):
 
         table_name = spath[1]
         element_id = int(spath[2])
-        column_name = ".".join(spath[3].split(".")[0:-1])
+        column_name = spath[3].rsplit(".", 1)[0]
 
         prev_data = self.db.get_element_data(table_name, column_name, element_id)
         prev_size = len(prev_data)
@@ -203,13 +219,11 @@ class FuSQL(fuse.Fuse):
 
             self.db.rename_table(table_from, table_to)
             
-        inodes = self.inodes.copy()
-        for dir_name in inodes:
+        for dir_name in self.paths:
             if dir_name.startswith(path_from):
                 dir_to = dir_name.replace(path_from, path_to)
-                self.inodes[dir_to] = self.inodes[dir_name]
-                self.inodes.pop(dir_name)
-
+                self.paths.append(dir_to)
+                self.paths.remove(dir_name)
         
         return 0
     
@@ -244,7 +258,7 @@ class FuSQL(fuse.Fuse):
         if is_table:
             self.db.create_table(table_name)
 
-            self.inodes[table_path] = {"size": 0, "is_dir": True}
+            self.paths.append(table_path)
         else:
             try:
                 element_id = int(spath[2])
@@ -254,7 +268,7 @@ class FuSQL(fuse.Fuse):
             self.db.create_row(table_name, element_id)
 
             row_path = table_path + "/" + str(element_id)
-            self.inodes[row_path] = {"size": 0, "is_dir": True}
+            self.paths.append(row_path)
             
             table_structure = self.db.get_table_structure(table_name)
             # Fill the row with the column files
@@ -265,7 +279,7 @@ class FuSQL(fuse.Fuse):
 
                 column_path = row_path + "/" + column_name + "." + column_type
 
-                self.inodes[column_path] = {"size": 0, "is_dir": False}
+                self.paths.append(column_path)
 
         return 0
 
@@ -282,11 +296,9 @@ class FuSQL(fuse.Fuse):
         table_name = spath[1]
 
         def remove_paths(path):
-            inodes = self.inodes.copy()
-
-            for i in inodes:
+            for i in self.paths:
                 if i.startswith(path):
-                    self.inodes.pop(i)
+                    self.paths.remove(i)
 
         if is_table:
             table_elements = self.db.get_all_elements(table_name)
@@ -310,7 +322,7 @@ class FuSQL(fuse.Fuse):
         if path != "/":
             path = path + "/"
         
-        for i in self.inodes.keys():
+        for i in self.paths:
             if i.startswith(path) and i != "/":
                 name = i.split(path)[1]
                 name = name.split("/")[0]
