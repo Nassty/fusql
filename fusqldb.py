@@ -74,10 +74,6 @@ class FusqlDb(object):
 
         sql = "PRAGMA TABLE_INFO(%s)" % table
         # I plan handle sites here. 
-        special_cases =   {"start":    "html",
-                           "page":     "html",
-                           "style":    "css",
-                           "functions":"js"}
 
         # TODO: Magic to guess file mimetype if it's a binary file
 
@@ -86,8 +82,8 @@ class FusqlDb(object):
         result = []
         for element in self.cursor:
             element_name = element[1].encode("ascii")
-            if element_name in special_cases.keys():
-                element_type = special_cases[element_name]
+            if element_name in common.FILE_SPECIAL_CASES.keys():
+                element_type = common.FILE_SPECIAL_CASES[element_name]
             else:
                 element_type = common.DB_TYPE_TRANSLATOR[element[2].encode("ascii")]
             if element_name == "start": # I can't name a column index,
@@ -142,6 +138,9 @@ class FusqlDb(object):
     @fusqlogger.log(True)
     def set_element_data(self, table_name, column_name, element_id, value):
         '''Modifies a table field'''
+        
+        if column_name == "index":
+            column_name = "start"
 
         sql = "UPDATE '%s' SET '%s' = '%s' WHERE id = %d" \
               % (table_name, column_name, value, element_id)
