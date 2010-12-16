@@ -134,9 +134,16 @@ class FusqlDb(object):
                     result += b
             else:
                 result = str(response)
-                result += '\n'
 
         return result
+    
+    @fusqlogger.log()
+    def set_element_data(self, table_name, column_name, element_id, value):
+        '''Modifies a table field'''
+
+        sql = "UPDATE '%s' SET '%s' = '%s' WHERE id = %d" \
+              % (table_name, column_name, value, element_id)
+        self.execute_sql(sql)
 
     @fusqlogger.log()
     def create_table(self, table_name):
@@ -189,11 +196,4 @@ class FusqlDb(object):
         sql = "DELETE FROM '%s' WHERE id = %d" % (table_name, element_id)
         self.execute_sql(sql)
 
-    @fusqlogger.log()
-    def update_table_field_by_id(self, table_name, element_id, field, value):
-        '''Modifies a table field'''
-
-        sql = "UPDATE '%s' SET '%s' = '%s' WHERE id = %d" \
-              % (table_name, field, value, element_id)
-        self.execute_sql(sql)
 

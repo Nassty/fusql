@@ -75,17 +75,23 @@ class FuSQL(fuse.Fuse):
 
                     column_path = row_path + "/" + column_name + "." + column_type
 
-                    data = self.db.get_element_data(table_name, column_name, row_id)
-                    self.inodes[column_path] = {"size": len(data), "is_dir": False}
+                    self.inodes[column_path] = {"size": 0, "is_dir": False}
 
     @fusqlogger.log()
     def getattr(self, path):
+        spath = path.split("/")
+
         if path in self.inodes:
             if self.inodes[path]["is_dir"]:
                 result = self.dir_metadata
             else:
+                table_name = spath[1]
+                row_id = int(spath[2])
+                column_name = ".".join(spath[3].split(".")[0:-1])
+                data = self.db.get_element_data(table_name, column_name, row_id)
+
                 result = self.file_metadata
-                result.st_size = self.inodes[path]["size"]
+                result.st_size = len(data)
         else:
             result = -ENOENT
 
@@ -146,8 +152,24 @@ class FuSQL(fuse.Fuse):
     def write(self, path, buf, offset, fh=None):
         return len(buf)
         
-    @fusqlogger.log(showReturn=True)
+    @fusqlogger.log()
     def truncate(self, path, size, fh=None):
+        spath = path.split("/")
+
+        table_name = spath[1]
+        element_id = int(spath[2])
+        column_name = ".".join(spath[3].split(".")[0:-1])
+
+        prev_data = self.db.get_element_data(table_name, column_name, element_id)
+        prev_size = len(prev_data)
+
+        if size > prev_size:
+            new_data = prev_data + (size - prev_size)*"0"
+        else:
+            new_data = prev_data[0:size]
+
+        self.db.set_element_data(table_name, column_name, element_id, new_data)
+
         return 0
 
     @fusqlogger.log()
@@ -174,7 +196,7 @@ class FuSQL(fuse.Fuse):
             if table_from != table_to:
                 return -EINVAL
 
-            self.db.update_table_field_by_id(table_to, id_from, "id", id_to)
+            self.db.set_element_data(table_to, "id", id_from, id_to)
             
         else:
             # If its a table
