@@ -21,7 +21,7 @@ import common
 fuse.fuse_python_api = (0, 2)
 
 class Metadata(fuse.Stat):
-    @fusqlogger.log()
+    @fusqlogger.log
     def __init__(self, mode, isDir):
         fuse.Stat.__init__(self)
         
@@ -41,7 +41,7 @@ class Metadata(fuse.Stat):
         self.st_size  = 0
 
 class FuSQL(fuse.Fuse):
-    @fusqlogger.log()
+    @fusqlogger.log
     def __init__(self, *args, **kw):
         fuse.Fuse.__init__(self, *args, **kw)
         self.db = fusqldb.FusqlDb("test.db")
@@ -77,7 +77,7 @@ class FuSQL(fuse.Fuse):
 
                     self.paths.append(column_path)
 
-    @fusqlogger.log()
+    @fusqlogger.log
     def getattr(self, path):
         spath = path.split("/")
 
@@ -100,11 +100,11 @@ class FuSQL(fuse.Fuse):
         return result
 
 
-    @fusqlogger.log()
+    @fusqlogger.log
     def open(self, path, flags):
         return 0
 
-    @fusqlogger.log()
+    @fusqlogger.log
     def read(self, path, size, offset):
         spath = path.split("/")
         table_name = spath[1]
@@ -118,7 +118,7 @@ class FuSQL(fuse.Fuse):
 
         return result
 
-    @fusqlogger.log(showReturn=True)
+    @fusqlogger.log
     def mknod(self, path, mode, rdev):
         spath = path.split("/")
 
@@ -149,7 +149,7 @@ class FuSQL(fuse.Fuse):
 
         return 0
 
-    @fusqlogger.log(showReturn=True)
+    @fusqlogger.log
     def write(self, path, buf, offset, fh=None):
         spath = path.split("/")
 
@@ -157,7 +157,7 @@ class FuSQL(fuse.Fuse):
         row_id = int(spath[2])
         column_name = spath[3].rsplit(".", 1)[0]
 
-        prev_data = self.db.get_element_data(table_name, column_name, row_id)
+        prev_data = self.db.get_element_data(table_name, column_name, row_id, use_cache=False)
         prev_size = len(prev_data)
 
         write_size = len(buf)
@@ -171,7 +171,7 @@ class FuSQL(fuse.Fuse):
 
         return write_size
         
-    @fusqlogger.log()
+    @fusqlogger.log
     def truncate(self, path, size, fh=None):
         spath = path.split("/")
 
@@ -191,11 +191,11 @@ class FuSQL(fuse.Fuse):
 
         return 0
 
-    @fusqlogger.log()
+    @fusqlogger.log
     def unlink(self, path):
         return 0
 
-    @fusqlogger.log(showReturn=True)
+    @fusqlogger.log
     def rename(self, path_from, path_to):
         spath_from = path_from.split("/")
         spath_to = path_to.split("/")
@@ -230,19 +230,19 @@ class FuSQL(fuse.Fuse):
         
         return 0
     
-    @fusqlogger.log()
+    @fusqlogger.log
     def chmod(self, path, mode):
         return 0
     
-    @fusqlogger.log()
+    @fusqlogger.log
     def chown(self, path, uid, gid):
         return 0
 
-    @fusqlogger.log()
+    @fusqlogger.log
     def utime(self, path, times):
         return 0
 
-    @fusqlogger.log(showReturn=True)
+    @fusqlogger.log
     def mkdir(self, path, mode):
         spath = path.split("/")
 
@@ -286,7 +286,7 @@ class FuSQL(fuse.Fuse):
 
         return 0
 
-    @fusqlogger.log(showReturn=True)
+    @fusqlogger.log
     def rmdir(self, path):
         spath = path.split("/")
         result = 0
@@ -318,7 +318,7 @@ class FuSQL(fuse.Fuse):
 
         return result
 
-    @fusqlogger.log()
+    @fusqlogger.log
     def readdir(self, path, offset):
         result = ['.', '..']
 
@@ -336,7 +336,7 @@ class FuSQL(fuse.Fuse):
         for i in result:
                 yield fuse.Direntry(i)
 
-    @fusqlogger.log()
+    @fusqlogger.log
     def release(self, path, fh=None):
         return 0
 

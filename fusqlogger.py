@@ -19,48 +19,39 @@ class colors:
         return "%s%s%s" %( colors.HEADER, str(message),
                 colors.ENDC )
 
-def log(skip=False, showReturn=False):
-    def _log(f):
-        @wraps(f)
-        def handler(*args, **kw):
-            colorize = colors()
+def log(f):
+    @wraps(f)
+    def handler(*args, **kw):
+        colorize = colors()
 
-            if len(args) > 0 and "__class__" in dir(args[0]):
-                header = "[MET] %s." % colorize.ok(args[0].__class__.__name__)
-            else:
-                header = "[FUN] "
+        if len(args) > 0 and "__class__" in dir(args[0]):
+            header = "[MET] %s." % colorize.ok(args[0].__class__.__name__)
+        else:
+            header = "[FUN] "
 
-            fun_name = colorize.ok(f.__name__)
+        fun_name = colorize.ok(f.__name__)
 
-            fun_args = colorize.warn(", ".join(map(str, args[1:])))
-            if len(kw.items()) != 0:
-                fun_args += colorize.warn(" {" + ", ".join(["%s => %s"% (x,y) for x,y in
-                    kw.items() ] ) + "}")
+        fun_args = colorize.warn(", ".join(map(str, args[1:])))
+        if len(kw.items()) != 0:
+            fun_args += colorize.warn(" {" + ", ".join(["%s => %s"% (x,y) for x,y in
+                kw.items() ] ) + "}")
 
-            retValue = f(*args, **kw)
+        print "%s%s(%s)" % (header, fun_name, fun_args)
 
-            retstr = ""
-            if showReturn:
-                retstr = " returned " + colorize.ok(str(retValue))
+        return f(*args, **kw)
 
-            if not skip:
-                print "%s%s(%s)%s" % (header, fun_name, fun_args, str(retstr))
-
-            return retValue
-
-        return handler
-    return _log
+    return handler
 
 def dump(msg, cached=False):
     colorize = colors()
     if cached:
         print "[CACHE]",
     else:
-        print "[SQL] ",
+        print "[SQL]",
 
-    print "dumped : %s" % colorize.dump(msg) 
+    print "dumped: %s" % colorize.dump(msg) 
 if __name__ == "__main__":
-    @log()
+    @log
     def asd(*args, **kw):
         if args:
             dump(" ".join(map(str, args)))
