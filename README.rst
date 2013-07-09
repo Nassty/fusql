@@ -31,12 +31,12 @@ To run it, make sure you have Fuse installed, and python bindings
 use the package python-fuse, for other distros you should investigate.
 Once you have that you can run it using:
 ::
-    $ python fusqldb.py -f mnt_folder
+    $ python fusql.py -f mnt_folder
 
 
 And if you don't want to view the debug
 ::
-    $ python fusqldb.py mnt_folder
+    $ python fusql.py mnt_folder
 
 
 To unmount it you can run
